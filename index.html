@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="MMFace-DiT: A Dual-Stream Diffusion Transformer for High-Fidelity Multimodal Face Generation - CVPR 2026">
+  <meta name="keywords" content="Diffusion Transformer, DiT, Multimodal Face Generation, Face Synthesis, CVPR 2026, Generative AI">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MMFace-DiT: Dual-Stream Diffusion Transformer</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="assets/icon.png" type="image/png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Bulma CSS (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <!-- MathJax for Equations -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #090A0F;
+      --card-bg: rgba(22, 24, 34, 0.7);
+      --accent-primary: #a855f7;   /* Vibrant Purple */
+      --accent-secondary: #06b6d4; /* Cyan */
+      --accent-tertiary: #ec4899;  /* Pink */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --header-gradient: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary), var(--accent-tertiary));
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1), transparent 50%);
+      background-attachment: fixed;
+    }
+    
+    a { color: var(--accent-secondary); transition: color 0.3s ease; }
+    a:hover { color: var(--accent-primary); }
+    
+    .title { color: var(--text-main) !important; font-weight: 800; letter-spacing: -0.03em; }
+    .subtitle { color: var(--text-muted) !important; }
+    
+    /* Hero Gradient Text */
+    .publication-title {
+      font-size: 3.5rem;
+      background: var(--header-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+    }
+
+    .publication-authors { color: #cbd5e1 !important; font-size: 1.2rem; }
+    .author-block { margin: 0 10px; }
+    .author-block a { color: var(--text-main); text-decoration: none; border-bottom: 1px dashed var(--accent-primary); transition: all 0.3s ease;}
+    .author-block a:hover { border-bottom: 1px solid var(--accent-secondary); color: var(--accent-secondary); }
+
+    /* Buttons - Glassmorphic */
+    .button.is-dark {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+    }
+    .button.is-dark:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--accent-primary);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2);
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .hero { padding-top: 3rem; padding-bottom: 1rem; }
+
+    /* Glass Container */
+    .glass-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      padding: 2rem;
+      box-shadow: var(--glass-shadow);
+      margin-top: 1rem;
+    }
+
+    /* Horizontal Scrollable Carousels with Peek Effect */
+    .scrollable-container {
+      display: flex;
+      overflow-x: auto;
+      gap: 1.5rem;
+      padding-bottom: 1.5rem;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-primary) rgba(255, 255, 255, 0.05);
+      align-items: stretch;
+    }
+    .scrollable-container::-webkit-scrollbar { height: 8px; }
+    .scrollable-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 8px; }
+    .scrollable-container::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 8px; }
+    
+    .scrollable-item {
+      flex: 0 0 85%; /* 85% width allows the next item to "peek" in, hinting at scrollability */
+      scroll-snap-align: center;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    @media (min-width: 1024px) {
+      .scrollable-item { flex: 0 0 90%; }
+    }
+
+    /* Dynamic Image Fitting (Handles both Wide & Tall images perfectly) */
+    .dynamic-img {
+      width: 100%;
+      height: 450px;
+      object-fit: contain; /* Magic property! Fits aspect ratios perfectly within the height */
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3); /* Dark backdrop for letterboxing */
+      padding: 10px;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .standard-img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+    }
+
+    /* Table Styling - Premium */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 1.5rem;
+      margin-bottom: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+    }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(15, 17, 26, 0.8);
+      font-size: 0.95rem;
+    }
+    .results-table th, .results-table td {
+      padding: 14px 16px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: #e2e8f0;
+    }
+    .results-table thead tr {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 2px solid var(--accent-primary);
+    }
+    .results-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.04); }
+    
+    /* Strict Purple Bolding Class */
+    .purple-bold {
+      color: var(--accent-primary) !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Best Score Highlighting */
+    .best-score {
+      color: #10b981; /* Emerald Green */
+      font-weight: 700;
+    }
+    .best-score::after { content: " ★"; font-size: 0.8em; }
+
+    /* Section Styling */
+    .section-title {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      background: var(--header-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+
+    .hr { 
+      width: 100%; height: 1px; margin: 30px 0; 
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); 
+    }
+
+    /* Math Block Styling */
+    .math-block {
+      background: rgba(0,0,0,0.4);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      border-left: 4px solid var(--accent-primary);
+      overflow-x: auto;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Animations */
+    .fade-in-section {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+    .fade-in-section.is-visible { opacity: 1; transform: none; }
+  </style>
+</head>
+
+<body>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          
+          <h1 class="title is-1 publication-title">MMFace-DiT</h1>
+          <h1 class="title is-3" style="color: white; margin-top: 5px; font-weight: 600;"> 
+            A Dual-Stream Diffusion Transformer for <br>High-Fidelity Multimodal Face Generation
+          </h1>
+          
+          <div class="is-size-4" style="color: var(--accent-primary); margin-top: 15px; margin-bottom: 15px; font-weight: 700;">
+            CVPR 2026
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://github.com/Bharath-K3" target="_blank">Bharath Krishnamurthy</a>
+            </span> &nbsp;&nbsp;&nbsp;&nbsp;
+            <span class="author-block">
+              <a href="#" target="_blank">Ajita Rattani</a>
+            </span>
+          </div>
+
+          <div class="is-size-6 publication-authors" style="color: var(--text-muted); margin-top: 10px; font-weight: 400;">
+            <span class="author-block">University of North Texas</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="column has-text-centered" style="margin-top: 1.5rem;">
+            <div class="publication-links">
+              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="ai ai-arxiv"></i></span><span>Paper</span></a></span>
+              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-github"></i></span><span>Code</span></a></span>
+              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-magic"></i></span><span>Demo</span></a></span>
+              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-database"></i></span><span>Dataset</span></a></span>
+              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-flask"></i></span><span>Lab Website</span></a></span>
+            </div>
+            <p style="color: var(--accent-secondary); margin-top: 10px; font-size: 0.9rem;">
+              <i class="fas fa-clock"></i> Links coming soon!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Teaser / Abstract -->
+<section class="section fade-in-section pt-0">
+  <div class="container is-max-desktop">
+    <div class="glass-container">
+      <img src="assets/Teaser_MMDiT.jpg" alt="MMFace-DiT Synthesis Overview" class="standard-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center; border: 1px dashed rgba(255,255,255,0.2);\'>[Figure 1 Placeholder: Semantic Mask & Sketch Guidance]<br><small>assets/Teaser_MMDiT.jpg</small></div>'"/>
+      <div class="content has-text-justified" style="color: #cbd5e1; margin-top: 20px; font-size: 0.95rem; line-height: 1.6;">
+        <b class="purple-bold">Figure 1: High-Fidelity Face Synthesis.</b> MMFace-DiT synthesizes photorealistic portraits from multi-modal inputs. <i>Left:</i> Given a semantic mask and text prompt, our model generates a face with diverse identity variations across multiple VAEs. <i>Right:</i> Guided by a sketch, it performs precise attribute-guided generation for numerous hair colors. This demonstrates our model’s ability to seamlessly fuse spatial and semantic guidance.
+      </div>
+    </div>
+    
+    <div class="columns is-centered has-text-centered mt-6">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3 section-title">Abstract</h2>
+        <div class="content has-text-justified" style="color: #e2e8f0; line-height: 1.8; font-size: 1.05rem;">
+          <p>
+            Recent multimodal face generation models address the spatial control limitations of text-to-image diffusion models by augmenting text-based conditioning with spatial priors such as segmentation masks, sketches, or edge maps. However, existing approaches typically append auxiliary control modules or stitch together separate uni-modal networks. These ad hoc designs inherit architectural constraints, duplicate parameters, and often fail under conflicting modalities, leading to modal dominance. 
+          </p>
+          <p>
+            We introduce <b class="purple-bold">MMFace-DiT</b>, a unified dual-stream diffusion transformer engineered for synergistic multimodal face synthesis. Its core novelty lies in a dual-stream transformer block that processes spatial (mask/sketch) and semantic (text) tokens in parallel, deeply fusing them through a shared <b class="purple-bold">Rotary Position-Embedded (RoPE) Attention</b> mechanism. Furthermore, a novel <b class="purple-bold">Modality Embedder</b> enables a single cohesive model to dynamically adapt to varying spatial conditions without retraining. MMFace-DiT achieves a <b class="purple-bold">40% improvement</b> in visual fidelity and prompt alignment over five state-of-the-art multimodal face generation models, establishing a flexible new paradigm for end-to-end controllable generative modeling.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Methodology Section -->
+<section class="section fade-in-section">
+  <div class="container is-max-desktop">
+    <div class="hr"></div>
+    <h2 class="title is-3 has-text-centered section-title">Methodology</h2>
+    
+    <!-- Methodology Scrollable Carousel -->
+    <div class="scrollable-container mt-4">
+      <div class="scrollable-item glass-container" style="margin-top: 0; padding: 1.5rem;">
+        <h4 class="title is-5 has-text-centered" style="color: var(--text-main); margin-bottom: 1rem;">Generation Pipeline</h4>
+        <img src="assets/MMDiT_Process.jpg" alt="MMFace-DiT Pipeline" class="dynamic-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center; border: 1px dashed rgba(255,255,255,0.2);\'>[Figure 2 Placeholder: Generation Pipeline Diagram]<br><small>assets/MMDiT_Process.jpg</small></div>'"/>
+      </div>
+      
+      <div class="scrollable-item glass-container" style="margin-top: 0; padding: 1.5rem;">
+        <h4 class="title is-5 has-text-centered" style="color: var(--text-main); margin-bottom: 1rem;">Dual-Stream Architecture</h4>
+        <img src="assets/MMDiT.jpg" alt="MMFace-DiT Architecture" class="dynamic-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center; border: 1px dashed rgba(255,255,255,0.2);\'>[Figure 3 Placeholder: Architecture Diagram]<br><small>assets/MMDiT.jpg</small></div>'"/>
+      </div>
+    </div>
+    <div class="has-text-centered" style="margin-top: 0.8rem; color: var(--accent-secondary); font-size: 0.9rem; font-weight: 500;">
+      <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to view the Pipeline & Architecture
+    </div>
+
+    <div class="content mt-6">
+      <h3 class="title is-4" style="color: var(--text-main);">1. Unified Conditioning & Dynamic Modality Adaptation</h3>
+      <p style="color: var(--text-muted); font-size: 1.05rem;">
+        Unlike prior works requiring separate models per modality, MMFace-DiT adapts to masks or sketches dynamically in a single forward pass. This is driven by our global conditioning vector, \(C_{global}\), which introduces a novel <b class="purple-bold">Modality Embedder</b> \(E_{modality}\) that maps a discrete modality flag to a dense vector:
+      </p>
+      <div class="math-block">
+        $$ C_{global} = E_{time}(t) + E_{caption}(c_{pooled}) + E_{modality}(m) $$
+      </div>
+
+      <h3 class="title is-4" style="color: var(--text-main); margin-top: 2rem;">2. Adaptive Layer Normalization (AdaLN)</h3>
+      <p style="color: var(--text-muted); font-size: 1.05rem;">
+        The unified global conditioning vector orchestrates the behavior of each block independently. It is transformed to generate a comprehensive set of modulation parameters \(\{\gamma, \beta, \alpha\}\) for both the attention and MLP components. This enables text, timestep, and the active modality to exert fine-grained, layer-specific control over the entire network.
+      </p>
+
+      <h3 class="title is-4" style="color: var(--text-main); margin-top: 2rem;">3. Dual-Stream Shared RoPE Attention for Deep Fusion</h3>
+      <p style="color: var(--text-muted); font-size: 1.05rem;">
+        Our transformer processes image tokens (\(T_i\)) and text tokens (\(T_t\)) in parallel streams. To prevent modal dominance, they are continuously fused via a central, shared Multi-Head Attention mechanism. We apply 2D axial RoPE for spatial image patches and 1D sequential RoPE for text tokens:
+      </p>
+      <div class="math-block">
+        $$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{\text{RoPE}(Q)\text{RoPE}(K)^T}{\sqrt{d_k}}\right)V $$
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.95rem; text-align: center;">
+        This mechanism allows every image patch to bidirectionally attend to every text token, ensuring precise spatial-semantic alignment.
+      </p>
+
+      <h3 class="title is-4" style="color: var(--text-main); margin-top: 2rem;">4. Dynamic Gated Residual Connections</h3>
+      <p style="color: var(--text-muted); font-size: 1.05rem;">
+        Following attention and MLP operations, we employ a gating connection to modulate the output stream \(T_{in}\). The gating scalar \(\alpha\) derived from \(C_{global}\) acts as a dynamic, learned filter to selectively emphasize or suppress modalities. This prevents strong geometric priors (e.g., a dense sketch) from overpowering subtle semantic cues (e.g., text descriptors):
+      </p>
+      <div class="math-block">
+        $$ T_{out} = T_{in} + \alpha \odot F(\text{AdaLN}(T_{in}, \gamma, \beta)) $$
+      </div>
+
+      <h3 class="title is-4" style="color: var(--text-main); margin-top: 2rem;">5. VLM-Powered Data Enrichment & Optimization</h3>
+      <p style="color: var(--text-muted); font-size: 1.05rem;">
+        To overcome the bottleneck of semantically shallow annotations in existing face datasets, we utilize a robust annotation pipeline built on the <b class="purple-bold">InternVL3</b> Visual Language Model and Qwen3 LLM. This yields 1M high-quality, descriptive captions. The entire framework operates in the compressed latent space of the 16-channel FLUX VAE and natively supports optimization via both <b class="purple-bold">DDPM (Min-SNR)</b> and <b class="purple-bold">Rectified Flow Matching (RFM)</b> objectives.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Qualitative Results (Visuals) -->
+<section class="section fade-in-section">
+  <div class="container is-max-desktop">
+    <div class="hr"></div>
+    <h2 class="title is-3 has-text-centered section-title">Qualitative Results</h2>
+    <p class="has-text-centered" style="color: var(--text-muted); margin-bottom: 2rem;">
+      Comparison of MMFace-DiT against leading spatial conditioning methods.
+    </p>
+
+    <!-- Qualitative Scrollable Carousel -->
+    <div class="scrollable-container">
+      <div class="scrollable-item glass-container" style="margin-top: 0; padding: 1.5rem;">
+        <h4 class="title is-5 has-text-centered" style="color: var(--text-main); margin-bottom: 1rem;">Text + Semantic Mask Generation</h4>
+        <img src="assets/Final_MMDiT_Masks_Flow.jpg" alt="Mask Conditioning Results" class="standard-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center;\'>[Figure 4 Placeholder: Mask Results Grid]<br><small>assets/MMDiT_Masks_Flow.jpg</small></div>'"/>
+      </div>
+      
+      <div class="scrollable-item glass-container" style="margin-top: 0; padding: 1.5rem;">
+        <h4 class="title is-5 has-text-centered" style="color: var(--text-main); margin-bottom: 1rem;">Text + Sketch Generation</h4>
+        <img src="assets/Final_MMDiT_Sketches_Flow.jpg" alt="Sketch Conditioning Results" class="standard-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center;\'>[Figure 5 Placeholder: Sketch Results Grid]<br><small>assets/MMDiT_Sketches_Flow.jpg</small></div>'"/>
+      </div>
+    </div>
+    <div class="has-text-centered" style="margin-top: 0.8rem; color: var(--accent-secondary); font-size: 0.9rem; font-weight: 500;">
+      <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to view Mask & Sketch results
+    </div>
+  </div>
+</section>
+
+<!-- Quantitative Results Section -->
+<section class="section fade-in-section">
+  <div class="container is-max-desktop">
+    <div class="hr"></div>
+    <h2 class="title is-3 has-text-centered section-title">Quantitative Results</h2>
+    
+    <!-- Table 1 -->
+    <div class="content">
+      <p style="color: var(--text-muted); margin-bottom: 10px;">
+        <strong class="purple-bold">Table 1:</strong> Quantitative results for <b class="purple-bold">Text + Mask</b> conditioned face generation. 
+        Our MMFace-DiT variants include <b class="purple-bold">Ours (D)</b>, trained with diffusion-based DDPM objectives, and <b class="purple-bold">Ours (F)</b>, trained using flow-matching objectives. 
+        Both substantially outperform all baselines across perceptual quality and text-image alignment metrics. Best results are highlighted.
+      </p>
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="purple-bold">Method</th>
+              <th class="purple-bold">FID ↓</th>
+              <th class="purple-bold">LPIPS ↓</th>
+              <th class="purple-bold">SSIM ↑</th>
+              <th class="purple-bold">ACC ↑</th>
+              <th class="purple-bold">mIoU ↑</th>
+              <th class="purple-bold">CLIP ↑</th>
+              <th class="purple-bold">Dist. ↓</th>
+              <th class="purple-bold">LLM Sc. ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TediGAN</td><td>62.55</td><td>0.43</td><td>0.48</td><td>79.77</td><td>39.02</td><td>25.26</td><td>0.75</td><td>0.4061</td>
+            </tr>
+            <tr>
+              <td>ControlNet</td><td>49.39</td><td>0.57</td><td>0.41</td><td>82.86</td><td>43.95</td><td>25.39</td><td>0.75</td><td>0.3103</td>
+            </tr>
+            <tr>
+              <td>UAC</td><td>48.88</td><td>0.46</td><td>0.48</td><td>78.27</td><td>38.82</td><td>23.75</td><td>0.76</td><td>0.3516</td>
+            </tr>
+            <tr>
+              <td>CD</td><td>49.00</td><td>0.56</td><td>0.46</td><td>85.69</td><td>38.85</td><td>25.07</td><td>0.75</td><td>0.3029</td>
+            </tr>
+            <tr>
+              <td>DDGI</td><td>50.88</td><td>0.45</td><td>0.49</td><td>86.00</td><td>36.02</td><td>24.29</td><td>0.76</td><td>0.3851</td>
+            </tr>
+            <tr>
+              <td>MM2Latent</td><td>49.78</td><td>0.59</td><td>0.45</td><td>84.57</td><td>38.19</td><td>26.78</td><td>0.73</td><td>0.3619</td>
+            </tr>
+            <tr style="background: rgba(168, 85, 247, 0.05);">
+              <td class="purple-bold">Ours (D)</td>
+              <td class="purple-bold">27.95</td>
+              <td class="purple-bold">0.34</td>
+              <td class="purple-bold">0.51</td>
+              <td class="best-score">93.95</td>
+              <td class="purple-bold">49.16</td>
+              <td class="best-score">31.69</td>
+              <td class="best-score">0.68</td>
+              <td class="purple-bold">0.6006</td>
+            </tr>
+            <tr style="background: rgba(168, 85, 247, 0.05); border-top: 1px solid rgba(168, 85, 247, 0.2);">
+              <td class="purple-bold">Ours (F)</td>
+              <td class="best-score">16.63</td>
+              <td class="best-score">0.34</td>
+              <td class="best-score">0.53</td>
+              <td class="purple-bold">93.74</td>
+              <td class="best-score">50.12</td>
+              <td class="purple-bold">31.34</td>
+              <td class="purple-bold">0.69</td>
+              <td class="best-score">0.6372</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Table 2 -->
+    <div class="content mt-6">
+      <p style="color: var(--text-muted); margin-bottom: 10px;">
+        <strong class="purple-bold">Table 2:</strong> Quantitative results for <b class="purple-bold">Text + Sketch</b> conditioned face generation.
+        Our MMFace-DiT includes <b class="purple-bold">Ours (D)</b> (diffusion-based DDPM) and <b class="purple-bold">Ours (F)</b> (flow-matching) variants.
+      </p>
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="purple-bold">Method</th>
+              <th class="purple-bold">FID ↓</th>
+              <th class="purple-bold">LPIPS ↓</th>
+              <th class="purple-bold">SSIM ↑</th>
+              <th class="purple-bold">CLIP ↑</th>
+              <th class="purple-bold">Dist. ↓</th>
+              <th class="purple-bold">LLM Sc. ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TediGAN</td><td>121.24</td><td>0.55</td><td>0.30</td><td>21.62</td><td>0.78</td><td>0.10</td>
+            </tr>
+            <tr>
+              <td>ControlNet</td><td>67.13</td><td>0.54</td><td>0.56</td><td>26.17</td><td>0.74</td><td>0.44</td>
+            </tr>
+            <tr>
+              <td>UAC</td><td>118.52</td><td>0.61</td><td>0.41</td><td>22.92</td><td>0.77</td><td>0.27</td>
+            </tr>
+            <tr>
+              <td>DDGI</td><td>56.57</td><td>0.43</td><td>0.51</td><td>23.95</td><td>0.76</td><td>0.43</td>
+            </tr>
+            <tr>
+              <td>MM2Latent</td><td>40.91</td><td>0.58</td><td>0.46</td><td>27.04</td><td>0.73</td><td>0.39</td>
+            </tr>
+            <tr style="background: rgba(168, 85, 247, 0.05);">
+              <td class="purple-bold">Ours (D)</td>
+              <td class="purple-bold">27.67</td>
+              <td class="purple-bold">0.24</td>
+              <td class="best-score">0.72</td>
+              <td class="best-score">31.56</td>
+              <td class="best-score">0.68</td>
+              <td class="purple-bold">0.69</td>
+            </tr>
+            <tr style="background: rgba(168, 85, 247, 0.05); border-top: 1px solid rgba(168, 85, 247, 0.2);">
+              <td class="purple-bold">Ours (F)</td>
+              <td class="best-score">9.14</td>
+              <td class="best-score">0.20</td>
+              <td class="purple-bold">0.70</td>
+              <td class="purple-bold">31.30</td>
+              <td class="purple-bold">0.69</td>
+              <td class="best-score">0.72</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Table 3 (Ablation) -->
+    <h3 class="title is-4 mt-6 purple-bold">Ablation Study: Core Components</h3>
+    <div class="content">
+      <p style="color: var(--text-muted); margin-bottom: 10px;">
+        <strong class="purple-bold">Table 3:</strong> Ablation study on core model components with spatial metrics. We incrementally add our innovations, demonstrating the impact of the Modality Embedder (ME), Dual-Stream (DS) design, Rotary Position Embedding (RoPE) Attention, and the final VAE choice. Spatial metrics (SSIM, ACC, mIoU) show simultaneous improvement with semantic metrics, proving mitigation of modality dominance.
+      </p>
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="purple-bold" style="vertical-align: middle; border-bottom: 2px solid var(--accent-primary);">Model</th>
+              <th colspan="4" class="purple-bold" style="border-bottom: 1px solid rgba(255,255,255,0.1);">Components</th>
+              <th colspan="3" class="purple-bold" style="border-bottom: 1px solid rgba(255,255,255,0.1);">Semantic Metrics</th>
+              <th colspan="3" class="purple-bold" style="border-bottom: 1px solid rgba(255,255,255,0.1);">Spatial Metrics</th>
+            </tr>
+            <tr>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">ME</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">DS</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">RoPE</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">VAE</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">FID ↓</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">LPIPS ↓</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">CLIP ↑</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">SSIM ↑</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">ACC ↑</th>
+              <th class="purple-bold" style="border-bottom: 2px solid var(--accent-primary);">mIoU ↑</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Model-1</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td>SD2</td>
+              <td>44.52</td><td>0.486</td><td>24.53</td><td>0.44</td><td>86.65</td><td>44.86</td>
+            </tr>
+            <tr>
+              <td>Model-2</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td>SD2</td>
+              <td>40.49</td><td>0.366</td><td>24.31</td><td>0.46</td><td>87.91</td><td>46.34</td>
+            </tr>
+            <tr>
+              <td>Model-3</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #ef4444; font-weight: bold;">✗</td>
+              <td>SD2</td>
+              <td>35.61</td><td>0.367</td><td>29.69</td><td>0.49</td><td>90.79</td><td>48.91</td>
+            </tr>
+            <tr>
+              <td>Model-4</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td>SD2</td>
+              <td>33.77</td><td class="best-score">0.326</td><td>31.42</td><td>0.50</td><td>92.29</td><td class="best-score">50.05</td>
+            </tr>
+            <tr style="background: rgba(168, 85, 247, 0.05); border-top: 1px solid rgba(168, 85, 247, 0.2);">
+              <td class="purple-bold">Model-5 (Final)</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td style="color: #10b981; font-weight: bold;">✓</td>
+              <td class="purple-bold">Flux</td>
+              <td class="best-score">27.95</td>
+              <td class="purple-bold">0.340</td>
+              <td class="best-score">31.69</td>
+              <td class="best-score">0.51</td>
+              <td class="best-score">93.95</td>
+              <td class="purple-bold">49.16</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VAE Ablation Figure -->
+    <div class="glass-container mt-6">
+      <h4 class="title is-5 has-text-centered" style="color: var(--text-main); margin-bottom: 1.5rem;">VAE Architecture Comparison</h4>
+      <img src="assets/VAE_Ablations_2.jpg" alt="VAE Architecture Ablation" class="standard-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px; text-align:center;\'>[Figure 6 Placeholder: VAE Ablations Grid]<br><small>assets/VAE_Ablations_2.jpg</small></div>'"/>
+      <div class="content has-text-justified mt-4" style="color: #cbd5e1; font-size: 0.95rem;">
+        <b class="purple-bold">Figure 6:</b> Qualitative comparison of VAE backbones integrated into MMFace-DiT. The choice of VAE highlights a clear trade-off between statistical fidelity and perceptual quality. Flux consistently yields the most perceptually faithful outputs with superior color accuracy and natural texture.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- BibTeX -->
+<section class="section fade-in-section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <div class="hr"></div>
+    <h2 class="title is-4 purple-bold">BibTeX</h2>
+    <pre style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; overflow-x: auto;"><code style="color: #cbd5e1; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">@inproceedings{krishnamurthy2026mmfacedit,
+  title     = {MMFace-DiT: A Dual-Stream Diffusion Transformer for High-Fidelity Multimodal Face Generation},
+  author    = {Krishnamurthy, Bharath and Rattani, Ajita},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2026}
+}</code></pre>
+  </div>
+</section>
+
+<footer class="footer" style="background-color: transparent; padding: 3rem 1.5rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05);">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Website template adapted from <a href="https://github.com/nerfies/nerfies.github.io" target="_blank">Nerfies</a>.
+            <br><br>
+            &copy; 2026 University of North Texas. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Scroll Animations Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const sections = document.querySelectorAll('.fade-in-section');
+    sections.forEach(section => { observer.observe(section); });
+  });
+</script>
+
+</body>
+</html>
