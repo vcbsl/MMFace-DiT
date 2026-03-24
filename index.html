@@ -213,6 +213,25 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    /* Video Container */
+    .publication-video {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%;
+      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: var(--glass-shadow);
+      border: 1px solid var(--border-color);
+    }
+    .publication-video iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
     /* Animations */
     .fade-in-section {
       opacity: 0; transform: translateY(30px);
@@ -261,12 +280,29 @@
               <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-github"></i></span><span>Code</span></a></span>
               <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-magic"></i></span><span>Demo</span></a></span>
               <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-database"></i></span><span>Dataset</span></a></span>
-              <span class="link-block"><a href="#" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-flask"></i></span><span>Lab Website</span></a></span>
+              <span class="link-block"><a href="https://vcbsl.github.io/lab-website/" target="_blank" class="button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-flask"></i></span><span>Lab Website</span></a></span>
             </div>
             <p style="color: var(--accent-secondary); margin-top: 10px; font-size: 0.9rem;">
               <i class="fas fa-clock"></i> Links coming soon!
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Video Presentation Section -->
+<section class="section fade-in-section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3 section-title">Video Presentation</h2>
+        <div class="publication-video">
+          <iframe src="https://www.youtube.com/embed/8vxPI2pya18" 
+                  title="YouTube video player" frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowfullscreen></iframe>
         </div>
       </div>
     </div>
